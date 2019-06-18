@@ -13,40 +13,68 @@ using namespace std;
  */
 int main(int argc, char **argv)
 {
-    //初始旋转矩阵以绕轴(1,1,3)旋转90度为例
-    Eigen::Matrix3d R = Eigen::AngleAxisd(M_PI / 2, Eigen::Vector3d(1, 1, 3).normalized()).toRotationMatrix();
-    //旋转矩阵->四元数
-    Eigen::Quaterniond q(R);
+     //初始旋转矩阵以绕轴(1,1,3)旋转90度为例
+     Eigen::Matrix3d R = Eigen::AngleAxisd(M_PI / 2, Eigen::Vector3d(1, 1, 3).normalized()).toRotationMatrix();
+     //旋转矩阵->四元数
+     Eigen::Quaterniond q(R);
 
-    //角速度
-    Eigen::Vector3d omega(0.01, 0.02, 0.03);
+     //角速度
+     Eigen::Vector3d omega(0.01, 0.02, 0.03);
 
-    //R<-R * exp(omega_skew_symmetric_matrix)
-    Eigen::Matrix3d updated_R = R * Sophus::SO3::exp(omega).matrix();
-    Eigen::Quaterniond q_R(updated_R);
+     //R<-R * exp(omega_skew_symmetric_matrix)
+     Eigen::Matrix3d updated_R = R * Sophus::SO3::exp(omega).matrix();
+     Eigen::Quaterniond q_R(updated_R);
 
-    cout << "通过旋转矩阵更新后的q:" << endl
-         << q_R.coeffs() << endl;
+     cout << "通过旋转矩阵更新后的q:" << endl
+          << q_R.coeffs() << endl;
 
-    //q<-q * [1,0.5*omega].transpose()
-    Eigen::AngleAxisd vector_r(1, omega / 2);
-    Eigen::Quaterniond q_delta(vector_r);
-    Eigen::Quaterniond q_q = q * q_delta;
+     //q<-q * [1,0.5*omega].transpose()
+     // Eigen::AngleAxisd vector_r(1, omega / 2);
+     // Eigen::Quaterniond q_delta(vector_r);
+     Eigen::Quaterniond q_delta(1, 0.005, 0.01, 0.015);
+     q_delta.normalize();
+     Eigen::Quaterniond q_q = q * q_delta;
 
-    //以四元数来比较更新后旋转差异
-    q_q.normalize();
-    cout << "通过四元数更新后的q:" << endl
-         << q_q.coeffs() << endl;
-    Eigen::Vector4d diff = q_R.coeffs() - q_q.coeffs();
-    cout << "以四元数形式来比较二者差距很小:" << endl
-         << diff << endl;
+     //以四元数来比较更新后旋转差异
+     q_q.normalize();
+     cout << "通过四元数更新后的q:" << endl
+          << q_q.coeffs() << endl;
+     Eigen::Vector4d diff = q_R.coeffs() - q_q.coeffs();
+     cout << "以四元数形式来比较二者差距很小:" << endl
+          << diff << endl;
 
-    //以旋转矩阵来比较更新后的旋转差异
-    cout << "R1: " << endl
-         << updated_R << endl;
-    cout << "R2: " << endl
-         << q_q.matrix() << endl;
+     //以旋转矩阵来比较更新后的旋转差异
+     cout << "R1: " << endl
+          << updated_R << endl;
+     cout << "R2: " << endl
+          << q_q.matrix() << endl;
 
-    cout << "以旋转矩阵来比较二者差距还是很小: " << endl
-         << updated_R - q_q.matrix() << endl;
+     cout << "以旋转矩阵来比较二者差距还是很小: " << endl
+          << updated_R - q_q.matrix() << endl;
+
+     cout << "***********" << endl;
+     Sophus::SO3 so3(R);
+     Eigen::Quaterniond q_update(1, 0.005, 0.01, 0.015);
+     q_update.normalize();
+
+     Eigen::Vector3d update_so3(0.01, 0.02, 0.03);
+     Sophus::SO3 so3_updated = so3 * Sophus::SO3::exp(update_so3);
+     cout << "SO3"
+          << " " << so3_updated << endl;
+
+     Eigen::Quaterniond q_updated = q * q_update;
+
+     Sophus::SO3 so3_q(q_updated);
+
+     cout << "q_updated " << so3_q << endl;
+
+     cout << Sophus::SO3(updated_R) << endl;
+
+     cout << Sophus::SO3(q_q) << endl;
+
+
+     cout << q_delta.coeffs() << endl;
+     cout << q_update.coeffs() << endl;
+
+     return 0;
 }
